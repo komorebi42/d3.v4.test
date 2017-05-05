@@ -1,0 +1,19 @@
+{
+  "name": "d3_test",
+  "version": "1.0.0",
+  "description": "d3 v4 testing",
+  "main": "index.js",
+  "dependencies": {
+    "browser-sync": "^2.18.8"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "test"
+  },
+  "keywords": [
+    "d3",
+    "v4"
+  ],
+  "author": "kyleyang",
+  "license": "ISC"
+}
