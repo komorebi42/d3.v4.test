@@ -10,6 +10,7 @@
     .chart {
       /*width: 400px;*/
       /*height: 400px;*/
+      padding: 20px;
       border: 1px dashed purple;
     }
 
@@ -24,6 +25,7 @@
     .text {
       fill: #FFF;
       font-size: .8rem;
+      /*text-align: center;*/
     }
   </style>
   <script id="__bs_script__">
@@ -46,6 +48,8 @@
   }
   var w = 400 - margin.left - margin.right,
     h = 400 - margin.top - margin.bottom;
+  
+  const offsetY = 10;
   var dataset = [{
     time: '2017-05-01',
     count: 42
@@ -57,10 +61,16 @@
     count: 52
   }, {
     time: '2017-05-04',
-    count: 71
+    count: 171
   }, {
     time: '2017-05-05',
     count: 52
+  }, {
+    time: '2017-05-06',
+    count: 92
+  }, {
+    time: '2017-05-07',
+    count: 32
   }];
   var chart = d3.select('.chart')
     .selectAll('div')
@@ -83,15 +93,12 @@
     .attr('width', w + margin.left + margin.right)
     .attr('height', h + margin.top + margin.bottom)
     .style('margin-top', '10px')
-    .style('background', '#DDD');
+    .style('background', '#DDD')
+    .call(responsivefy);
 
   var max = d3.max(dataset, d => {
     return d.count;
   });
-
-  var hScale = d3.scaleLinear()
-    .domain([0, max])
-    .range([0, h])
 
   var g = svg.selectAll('g')
     .data(dataset)
@@ -102,36 +109,47 @@
     .attr('transform', 'translate(' + margin.left + ', ' + margin.top + ')');
   // .attr('transform', (d, i) => 'translate(0, ' + h + ')');
 
+  console.debug('max: ', max);
+  let yScale = d3.scaleLinear()
+    .domain([0, max])
+    .range([h, 0]);
+
+  let yAxis = d3.axisLeft(yScale).ticks(12);
+
+  svg.insert('g')
+    .attr('transform', `translate(${margin.left}, ${margin.top - offsetY})`)
+    .call(yAxis);
+
+  let xScale = d3.scaleBand()
+    .padding(0.2)
+    .domain(dataset.map(a => a.time))
+    // .domain([new Date(dataset[0].time), new Date(dataset[dataset.length - 1].time)])
+    // .domain([new Date(2017, 5, 1), new Date(2017, 5, 5)])
+    .range([0, w]);
+
+  let xAxis = d3.axisBottom(xScale).ticks(dataset.length);
+  
+  svg.insert('g')
+    .attr('transform', `translate(${margin.left}, ${h + margin.top - offsetY})`)
+    .call(xAxis)
+    .selectAll('text')
+    .attr('text-anchor', 'end')
+    .attr('transform', 'rotate(-30)');
+
   g.insert('rect')
-    .attr('x', function (d, i) {
-      return i * 30 + 3;
-    })
-    .attr('y', function (d, i) {
-      return h - d.count;
-      // return 0
-    })
-    .attr('width', 30)  // TODO
-    .attr('height', function (d) {  // TODO
-      return d.count;
-      // return hScale.range(d)
-    })
+    .attr('x', d => xScale(d.time))
+    .attr('y', d => yScale(d.count) - offsetY)
+    .attr('width', d => xScale.bandwidth())
+    .attr('height', d => h - yScale(d.count))
     .attr('fill', '#099')
     .attr('stroke', '#FFF')
     .on('mouseenter', function (d, i, elems) {
       d3.select(this).attr('fill', '#09F')
-        .attr('height', d => d.count * 1.4)
-        .attr('y', function (d, i) {
-          return h - d.count * 1.4;
-        })
       // .style('transform', d => 'scaleX(2)')
       // .style('transform', d => 'translate(0, ' + d.count * 2 + ')')
     })
     .on('mouseleave', function (d, i, elems) {
       d3.select(this).attr('fill', '#099')
-        .attr('height', d => d.count * 1)
-        .attr('y', function (d, i) {
-          return h - d.count;
-        })
       // .style('transform', d => 'translate(0, ' + d.count + ')')
       // .style('transform', d => 'scaleY(1)')
     });
@@ -140,31 +158,29 @@
     .text(d => d.count)
     .classed('text', true)
     .attr('transform', (d, i) => {
-      let x = i * 30 + 10;
-      return 'translate(' + x + ', ' + h + ')';
+      let x = xScale(d.time);
+      let y = h - 20;
+      return 'translate(' + x + ', ' + y + ')';
     });
 
-  console.debug('max: ', max);
-  let yScale = d3.scaleLinear()
-    .domain([0, max])
-    .range([h, 0]);
+    function responsivefy(svg) {
+      let container = d3.select(svg.node().parentNode),
+      width = parseInt(svg.style('width')),
+      height = parseInt(svg.style('height')),
+      aspect = width / height;
 
-  let yAxis = d3.axisLeft(yScale).ticks(5, 's');
+      svg.attr('viewBox', '0 0 ' + width + ' ' + height)
+      .attr('perserveAspectRatio', 'xMinyMid')
+      .call(resize);
 
-  svg
-    .insert('g')
-    .attr('transform', `translate(${margin.left}, ${margin.top})`)
-    .call(yAxis);
+      d3.select(window).on('resize.' + container.attr('id'), resize);
 
-  let xScale = d3.scaleTime()
-    .domain([new Date(dataset[0].time), new Date(dataset[dataset.length - 1].time)])
-    // .domain([new Date(2017, 5, 1), new Date(2017, 5, 5)])
-    .range([0, w]);
-
-  let xAxis = d3.axisBottom(xScale).ticks(dataset.length);
-  svg.insert('g')
-    .attr('transform', `translate(${margin.left}, ${h + margin.top})`)
-    .call(xAxis);
+      function resize() {
+        let tw = parseInt(container.style('width'));
+        svg.attr('width', tw);
+        svg.attr('height', Math.round(tw / aspect));
+      }
+    }
 </script>
 
 </html>
