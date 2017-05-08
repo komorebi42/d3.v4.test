@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width">
-  <title>JS Bin</title>
+  <title>D3 v4</title>
   <script src="https://cdn.bootcss.com/d3/4.8.0/d3.min.js"></script>
   <style>
     .chart {
@@ -38,6 +38,9 @@
 
 <body>
   <div class="chart"></div>
+  <div>测试文本
+    <sup>TM</sup>
+  </div>
 </body>
 <script>
   let margin = {
@@ -48,7 +51,7 @@
   }
   var w = 400 - margin.left - margin.right,
     h = 400 - margin.top - margin.bottom;
-  
+
   const offsetY = 10;
   var dataset = [{
     time: '2017-05-01',
@@ -100,15 +103,6 @@
     return d.count;
   });
 
-  var g = svg.selectAll('g')
-    .data(dataset)
-    .enter()
-    .insert('g')
-    .attr('width', w)
-    .attr('height', h)
-    .attr('transform', 'translate(' + margin.left + ', ' + margin.top + ')');
-  // .attr('transform', (d, i) => 'translate(0, ' + h + ')');
-
   console.debug('max: ', max);
   let yScale = d3.scaleLinear()
     .domain([0, max])
@@ -117,6 +111,7 @@
   let yAxis = d3.axisLeft(yScale).ticks(12);
 
   svg.insert('g')
+    .attr('class', 'y-axis')
     .attr('transform', `translate(${margin.left}, ${margin.top - offsetY})`)
     .call(yAxis);
 
@@ -128,20 +123,33 @@
     .range([0, w]);
 
   let xAxis = d3.axisBottom(xScale).ticks(dataset.length);
-  
+
   svg.insert('g')
+    .attr('class', 'x-axis')
     .attr('transform', `translate(${margin.left}, ${h + margin.top - offsetY})`)
     .call(xAxis)
     .selectAll('text')
     .attr('text-anchor', 'end')
     .attr('transform', 'rotate(-30)');
 
+
+  // rectangular bar chart
+  var g = svg.selectAll('.bar')
+    .data(dataset)
+    .enter()
+    .insert('g')
+    .attr('class', 'bar')
+    .attr('width', w)
+    .attr('height', h)
+    .attr('transform', 'translate(' + margin.left + ', ' + margin.top + ')');
+  // .attr('transform', (d, i) => 'translate(0, ' + h + ')');
+
   g.insert('rect')
     .attr('x', d => xScale(d.time))
-    .attr('y', d => yScale(d.count) - offsetY)
+    .attr('y', d => yScale(d.count) - offsetY - 1)
     .attr('width', d => xScale.bandwidth())
     .attr('height', d => h - yScale(d.count))
-    .attr('fill', '#099')
+    .attr('fill', '#EEE')
     .attr('stroke', '#FFF')
     .on('mouseenter', function (d, i, elems) {
       d3.select(this).attr('fill', '#09F')
@@ -149,7 +157,7 @@
       // .style('transform', d => 'translate(0, ' + d.count * 2 + ')')
     })
     .on('mouseleave', function (d, i, elems) {
-      d3.select(this).attr('fill', '#099')
+      d3.select(this).attr('fill', '#EEE')
       // .style('transform', d => 'translate(0, ' + d.count + ')')
       // .style('transform', d => 'scaleY(1)')
     });
@@ -163,24 +171,55 @@
       return 'translate(' + x + ', ' + y + ')';
     });
 
-    function responsivefy(svg) {
-      let container = d3.select(svg.node().parentNode),
+  function responsivefy(svg) {
+    let container = d3.select(svg.node().parentNode),
       width = parseInt(svg.style('width')),
       height = parseInt(svg.style('height')),
       aspect = width / height;
 
-      svg.attr('viewBox', '0 0 ' + width + ' ' + height)
-      .attr('perserveAspectRatio', 'xMinyMid')
+    svg.attr('viewBox', '0 0 ' + width + ' ' + height)
+      .attr('perserveAspectRatio', 'xMinYMid')
       .call(resize);
 
-      d3.select(window).on('resize.' + container.attr('id'), resize);
+    d3.select(window).on('resize.' + container.attr('id'), resize);
 
-      function resize() {
-        let tw = parseInt(container.style('width'));
-        svg.attr('width', tw);
-        svg.attr('height', Math.round(tw / aspect));
-      }
+    function resize() {
+      let tw = parseInt(container.style('width'));
+      svg.attr('width', tw);
+      svg.attr('height', Math.round(tw / aspect));
     }
+  }
+
+  // scatter chart
+  var circle = svg.selectAll('.dot')
+    .data(dataset)
+    .enter()
+    .insert('g')
+    .attr('class', 'dot')
+    .attr('width', w)
+    .attr('height', h)
+    // .attr('transform', 'translate(' + margin.left + ', ' + margin.top + ')');
+    .attr('transform', d => `translate(${xScale(d.time) + margin.left + margin.right}, ${yScale(d.count) + margin.top + margin.bottom})`);
+
+  var cxScale = d3.scaleLinear()
+    .domain(d3.extent(dataset, d => d.time))
+    .range([0, w])
+    .nice();
+
+  var rScale = d3.scaleSqrt()
+    .domain([0, max])
+    .range([0, 20]);
+
+  circle.insert('circle')
+    // .attr('x', d => xScale(d.time))
+    // .attr('y', d => yScale(d.count) - offsetY - 1)
+    .attr('cr', d => cxScale(d.time))
+    .attr('cy', d => xScale(d.count))
+    .attr('r', d => rScale(d.count))
+    .style('fill-opacity', 0.5)
+    // .style('fill', 'steelblue')
+    .style('fill', 'steelblue')
+    .attr('height', d => h - yScale(d.count))
 </script>
 
 </html>
