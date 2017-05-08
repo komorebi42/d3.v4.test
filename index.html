@@ -10,7 +10,13 @@
     .chart {
       /*width: 400px;*/
       /*height: 400px;*/
+      margin: 10px;
       padding: 20px;
+      border: 1px dashed purple;
+    }
+
+    .line-chart {
+      margin: 10px;
       border: 1px dashed purple;
     }
 
@@ -38,6 +44,7 @@
 
 <body>
   <div class="chart"></div>
+  <div class="line-chart"></div>
   <div>测试文本
     <sup>TM</sup>
   </div>
@@ -69,10 +76,10 @@
     time: '2017-05-05',
     count: 52
   }, {
-    time: '2017-05-06',
+    time: '2017-05-08',
     count: 92
   }, {
-    time: '2017-05-07',
+    time: '2017-05-09',
     count: 32
   }];
   var chart = d3.select('.chart')
@@ -121,6 +128,12 @@
     // .domain([new Date(dataset[0].time), new Date(dataset[dataset.length - 1].time)])
     // .domain([new Date(2017, 5, 1), new Date(2017, 5, 5)])
     .range([0, w]);
+  // let xScale = d3.scaleTime()
+  //   .domain([
+  //     d3.min(dataset, d => d.time),
+  //     d3.max(dataset, d => d.time),
+  //   ])
+  //   .range([0, w]);
 
   let xAxis = d3.axisBottom(xScale).ticks(dataset.length);
 
@@ -199,7 +212,8 @@
     .attr('width', w)
     .attr('height', h)
     // .attr('transform', 'translate(' + margin.left + ', ' + margin.top + ')');
-    .attr('transform', d => `translate(${xScale(d.time) + margin.left + margin.right}, ${yScale(d.count) + margin.top + margin.bottom})`);
+    .attr('transform', d =>
+      `translate(${xScale(d.time) + margin.left + margin.right}, ${yScale(d.count) + margin.top + margin.bottom})`);
 
   var cxScale = d3.scaleLinear()
     .domain(d3.extent(dataset, d => d.time))
@@ -220,6 +234,66 @@
     // .style('fill', 'steelblue')
     .style('fill', 'steelblue')
     .attr('height', d => h - yScale(d.count))
+
+
+  // path-line chart
+  var svg2 = d3.select('.line-chart')
+    .insert('svg')
+    .attr('width', w + margin.left + margin.right)
+    .attr('height', h + margin.top + margin.bottom)
+    .style('margin-top', '10px')
+    .style('background', '#FFF')
+    .call(responsivefy);
+
+  var parseTime = d3.timeParse('%Y-%m-%d')//.format("%Y/%m/%d");
+
+  dataset.forEach(d => {
+    d.date = parseTime(d.time);
+  });
+
+  var txScale = d3.scaleTime()
+    .domain([
+      d3.min(dataset, d => d.date),
+      d3.max(dataset, d => d.date),
+    ])
+    .range([0, w]);
+
+  var tyScale = d3.scaleLinear()
+    .domain([
+      d3.min(dataset, d => d.count),
+      d3.max(dataset, d => d.count),
+    ])
+    .range([h, 0]);
+
+  svg2
+    .insert('g')
+    .attr('transform', `translate(${margin.left}, ${h + margin.top})`)
+    .call(d3.axisBottom(txScale).ticks(5));
+  svg2.insert('g')
+    .attr('transform', `translate(${margin.left}, ${margin.top})`)
+    .call(d3.axisLeft(tyScale));
+
+  var line = d3.line()
+    .x(d => txScale(d.date))
+    .y(d => tyScale(d.count))
+    .curve(d3.curveCatmullRom.alpha(0.5));
+
+  svg2.selectAll('.line')
+    .data([dataset])
+    .enter()
+    .insert('path')
+    .attr('class', 'line')
+    .attr('d', line)
+    .attr('transform', `translate(${margin.left + margin.right}, 0)`)    
+    // .attr('d', d => {
+    //   console.log('line:d,', d, line(d));
+    //   return line(d);
+    // })
+    // .style('stroke', (d, i) => ['#09F', '#099'][i])
+    .style('stroke-opacity', 0.5)
+    .style('stroke', '#099')
+    .style('stroke-width', 1)
+    .style('fill', 'none');
 </script>
 
 </html>
