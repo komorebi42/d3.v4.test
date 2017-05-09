@@ -7,14 +7,18 @@
   <title>D3 v4</title>
   <script src="https://cdn.bootcss.com/d3/4.8.0/d3.min.js"></script>
   <style>
-    .chart {
-      /*width: 400px;*/
-      /*height: 400px;*/
-      margin: 10px;
-      padding: 20px;
-      border: 1px dashed purple;
+    h2 {
+      text-align: center;
     }
 
+    .chart,
+    .bar-chart {
+      padding: 20px;
+    }
+
+    .chart,
+    .bar-chart,
+    .scatter-chart,
     .line-chart {
       margin: 10px;
       border: 1px dashed purple;
@@ -43,7 +47,14 @@
 </head>
 
 <body>
+  <h2>D3 v4 test</h2>
+  <h3>Original-chart</h3>
   <div class="chart"></div>
+  <h3>Bar-chart</h3>
+  <div class="bar-chart"></div>
+  <h3>Scatter-chart</h3>
+  <div class="scatter-chart"></div>
+  <h3>Line-chart</h3>
   <div class="line-chart"></div>
   <div>测试文本
     <sup>TM</sup>
@@ -52,7 +63,7 @@
 <script>
   let margin = {
     left: 40,
-    top: 20,
+    top: 30,
     right: 20,
     bottom: 30
   }
@@ -98,7 +109,7 @@
     .style('margin-top', '2px')
     .style('background', '#09A')
 
-  var svg = d3.select('.chart')
+  var svg = d3.select('.bar-chart')
     .insert('svg')
     .attr('width', w + margin.left + margin.right)
     .attr('height', h + margin.top + margin.bottom)
@@ -118,7 +129,7 @@
   let yAxis = d3.axisLeft(yScale).ticks(12);
 
   svg.insert('g')
-    .attr('class', 'y-axis')
+    .attr('class', 'y axis')
     .attr('transform', `translate(${margin.left}, ${margin.top - offsetY})`)
     .call(yAxis);
 
@@ -138,7 +149,7 @@
   let xAxis = d3.axisBottom(xScale).ticks(dataset.length);
 
   svg.insert('g')
-    .attr('class', 'x-axis')
+    .attr('class', 'x axis')
     .attr('transform', `translate(${margin.left}, ${h + margin.top - offsetY})`)
     .call(xAxis)
     .selectAll('text')
@@ -178,9 +189,10 @@
   g.insert('text')
     .text(d => d.count)
     .classed('text', true)
+    .attr('text-anchor', 'center')
     .attr('transform', (d, i) => {
-      let x = xScale(d.time);
-      let y = h - 20;
+      let x = xScale(d.time) + 12;
+      let y = yScale(d.count) - 20;
       return 'translate(' + x + ', ' + y + ')';
     });
 
@@ -204,7 +216,28 @@
   }
 
   // scatter chart
-  var circle = svg.selectAll('.dot')
+  var svg1 = d3.select('.scatter-chart')
+    .insert('svg')
+    .attr('width', w + margin.left + margin.right)
+    .attr('height', h + margin.top + margin.bottom)
+    .style('margin-top', '10px')
+    .style('background', '#FFF')
+    .call(responsivefy);
+  
+  svg1.insert('g')
+    .attr('class', 'x axis')
+    .attr('transform', `translate(${margin.left}, ${h + margin.top - offsetY})`)
+    .call(xAxis)
+    .selectAll('text')
+    .attr('text-anchor', 'end')
+    .attr('transform', 'rotate(-30)');
+  
+  svg1.insert('g')
+    .attr('class', 'y axis')
+    .attr('transform', `translate(${margin.left}, ${margin.top - offsetY})`)
+    .call(yAxis);
+
+  var circle = svg1.selectAll('.dot')
     .data(dataset)
     .enter()
     .insert('g')
@@ -245,7 +278,7 @@
     .style('background', '#FFF')
     .call(responsivefy);
 
-  var parseTime = d3.timeParse('%Y-%m-%d')//.format("%Y/%m/%d");
+  var parseTime = d3.timeParse('%Y-%m-%d') //.format("%Y/%m/%d");
 
   dataset.forEach(d => {
     d.date = parseTime(d.time);
@@ -256,7 +289,8 @@
       d3.min(dataset, d => d.date),
       d3.max(dataset, d => d.date),
     ])
-    .range([0, w]);
+    .range([0, w])
+    .nice();
 
   var tyScale = d3.scaleLinear()
     .domain([
@@ -284,14 +318,9 @@
     .insert('path')
     .attr('class', 'line')
     .attr('d', line)
-    .attr('transform', `translate(${margin.left + margin.right}, 0)`)    
-    // .attr('d', d => {
-    //   console.log('line:d,', d, line(d));
-    //   return line(d);
-    // })
-    // .style('stroke', (d, i) => ['#09F', '#099'][i])
+    .attr('transform', `translate(${margin.left}, 0)`)
+    .style('stroke', (d, i) => ['#09F', '#099'][i])
     .style('stroke-opacity', 0.5)
-    .style('stroke', '#099')
     .style('stroke-width', 1)
     .style('fill', 'none');
 </script>
